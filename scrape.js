@@ -52,11 +52,12 @@ async function scrapeAppointment() {
     } catch (error) {
       console.log("Keyboard unavailable.")
       console.log(error)
-      console.log("Typing password directly")
-      await page.focus('#password1');
-      console.log("Password = " + password);
-      await page.type('#password1', password);
-      console.log("Password done")
+      return
+      // console.log("Typing password directly")
+      // await page.focus('#password1');
+      // console.log("Password = " + password);
+      // await page.type('#password1', password);
+      // console.log("Password done")
 
     }
 
@@ -66,7 +67,8 @@ async function scrapeAppointment() {
     await page.click('button.btn.btn-brand-orange');
     console.log("Button clicked!")
     await page.waitForNavigation({ waitUntil: "networkidle2" });
-
+    await holdFor(10000)
+    //Ready for OTP
     console.log("Login successful");
 
     // Navigate to appointment page (adjust selectors based on actual site structure)
