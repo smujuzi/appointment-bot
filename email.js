@@ -2,7 +2,7 @@ const fs = require('fs');
 const readline = require('readline');
 const { google } = require('googleapis');
 
-const SCOPES = ['https://www.googleapis.com/auth/gmail.readonly'];
+const SCOPES = ['https://www.googleapis.com/auth/gmail.modify'];
 const TOKEN_PATH = 'token.json';
 
 async function authorizeGmail() {
@@ -64,6 +64,10 @@ async function fetchLatestOTPGmail(auth) {
     console.log('bodyData:', bodyData);
     console.log('decodedBody:', decodedBody);
     console.log('otpMatch:', otpMatch);
+    
+    if (otpMatch) {
+        await markEmailAsRead(auth,msg.id)
+    }
     return otpMatch ? otpMatch[0] : null;
 }
 
@@ -79,5 +83,22 @@ async function fetchLatestOTPGmail(auth) {
         console.log('OTP not found.');
     }
 })();
+
+async function markEmailAsRead(auth, messageId) {
+    const gmail = google.gmail({ version: 'v1', auth });
+    try {
+        // Modify the labels for the message to mark it as read
+        await gmail.users.messages.modify({
+            userId: 'me',
+            id: messageId,
+            resource: {
+                removeLabelIds: ['UNREAD'], // Removes the 'UNREAD' label
+            }
+        });
+        console.log(`Email with message ID ${messageId} marked as read.`);
+    } catch (error) {
+        console.error('Error marking email as read:', error);
+    }
+}
 
 
