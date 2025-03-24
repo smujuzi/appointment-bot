@@ -12,8 +12,12 @@
   "dependencies": {
     "axios": "^1.7.9",
     "dotenv": "^16.4.7",
+    "googleapis": "^146.0.0",
+    "imap-simple": "^5.1.0",
+    "mailparser": "^3.7.2",
     "node-telegram-bot-api": "^0.66.0",
-    "puppeteer": "^24.1.1",
+    "nodemailer": "^6.10.0",
+    "puppeteer": "^24.4.0",
     "puppeteer-extra": "^3.3.6",
     "puppeteer-extra-plugin-stealth": "^2.11.2",
     "puppeteer-real-browser": "^1.4.0"

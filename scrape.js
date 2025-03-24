@@ -1,6 +1,7 @@
 const { connect } = require("puppeteer-real-browser")
 const axios = require("axios");
 require("dotenv").config();
+const fs = require('fs');
 
 // Run the scraper
 scrapeAppointment();
@@ -64,10 +65,18 @@ async function scrapeAppointment() {
     console.log("Ready to click button and log in");
 
     // Click the login button
-    await page.click('button.btn.btn-brand-orange');
-    console.log("Button clicked!")
-    await page.waitForNavigation({ waitUntil: "networkidle2" });
-    await holdFor(10000)
+    await Promise.all([
+      page.click('button.btn.btn-brand-orange'), // Click the button
+      page.waitForNavigation({ waitUntil: "networkidle2" }).catch(() => console.log("No navigation happened")), // Wait for navigation, but don't hang if it doesn't happen
+    ]);
+    console.log("Button clicked!");
+    
+    // await holdFor(10000)
+    const html = await page.content(); // Get the HTML content of the page
+
+    // Write HTML content to file
+    fs.writeFileSync('page.html', html, 'utf8');
+    console.log('HTML content written to page.html');
     //Ready for OTP
     console.log("Login successful");
 
