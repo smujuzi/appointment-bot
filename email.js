@@ -6,12 +6,8 @@ const SCOPES = ['https://www.googleapis.com/auth/gmail.readonly'];
 const TOKEN_PATH = 'token.json';
 
 async function authorizeGmail() {
-    // const credentials = JSON.parse(fs.readFileSync('credentials.json'));
     const credentials = JSON.parse(fs.readFileSync('gmail-client-secret.json'));
-    // const { client_secret, client_id, redirect_uris } = credentials.installed;
     const { client_secret, client_id, javascript_origins } = credentials.web;
-    // const oAuth2Client = new google.auth.OAuth2(client_id, client_secret, javascript_origins[0]);
-    // const oAuth2Client = new google.auth.OAuth2(client_id, client_secret, 'urn:ietf:wg:oauth:2.0:oob');
     const oAuth2Client = new google.auth.OAuth2(client_id, client_secret, 'http://localhost');
 
 
@@ -34,14 +30,10 @@ async function authorizeGmail() {
 
 async function fetchLatestOTPGmail(auth) {
     const gmail = google.gmail({ version: 'v1', auth });
-    // const res = await gmail.users.messages.list({
-    //     userId: 'me',
-    //     q: 'subject:OTP is:unread',  // Adjust subject filter
-    //     maxResults: 1
-    // });
     const res = await gmail.users.messages.list({
         userId: 'me',
-        maxResults: 10
+        q: 'subject:One Time Password is:unread',
+        maxResults: 1
     });
 
     const messages = res.data.messages;
@@ -49,33 +41,30 @@ async function fetchLatestOTPGmail(auth) {
         console.log('No messages found.');
         return;
     }
+    msg = messages[0]
 
-    for (const msg of messages) {
-        const msgData = await gmail.users.messages.get({ userId: 'me', id: msg.id });
 
-        // Extract headers and snippet
-        const headers = msgData.data.payload.headers;
-        const subjectHeader = headers.find(header => header.name === 'Subject');
-        const fromHeader = headers.find(header => header.name === 'From');
-        const snippet = msgData.data.snippet;
+    const msgData = await gmail.users.messages.get({ userId: 'me', id: msg.id });
 
-        console.log('---');
-        console.log('Subject:', subjectHeader?.value || '(No Subject)');
-        console.log('From:', fromHeader?.value || '(Unknown Sender)');
-        console.log('Snippet:', snippet);
-    }
 
-    // if (!res.data.messages || res.data.messages.length === 0) {
-    //     console.log('No OTP email found.');
-    //     return null;
-    // }
+    const bodyData = msgData.data.payload.parts?.find(part => part.mimeType === 'text/plain')?.body?.data || msgData.data.payload.body.data; // get the text body of the email
+    const decodedBody = Buffer.from(bodyData, 'base64').toString('utf8'); //gmail encodes email body content in base64 for safe transmission. Converts the base-64 string into a buffer and then into a string (readable text)
+    const otpMatch = decodedBody.match(/\b\d{6}\b/);
+    /*
+    Regex specifically looks for a 6 digit number
+    \b — Word boundary, ensuring that the 6 digits are not part of a larger number or word. It matches the position between a word character (like a letter or digit) and a non-word character (like space, punctuation, etc.).
 
-    // const msg = await gmail.users.messages.get({ userId: 'me', id: res.data.messages[0].id });
-    // const bodyData = msg.data.payload.parts?.find(part => part.mimeType === 'text/plain')?.body?.data || msg.data.payload.body.data;
+    \d{6} — Matches exactly 6 digits (0-9).
 
-    // const decodedBody = Buffer.from(bodyData, 'base64').toString('utf8');
-    // const otpMatch = decodedBody.match(/\b\d{6}\b/);
-    // return otpMatch ? otpMatch[0] : null;
+    \b — Another word boundary, ensuring that the 6 digits are followed by a non-word character or the end of the string.
+    */
+
+    console.log('---');
+    console.log('---');
+    console.log('bodyData:', bodyData);
+    console.log('decodedBody:', decodedBody);
+    console.log('otpMatch:', otpMatch);
+    return otpMatch ? otpMatch[0] : null;
 }
 
 (async () => {
@@ -85,6 +74,8 @@ async function fetchLatestOTPGmail(auth) {
         console.log('OTP:', otp);
         // Puppeteer logic to enter OTP
     } else {
+        console.log('---');
+        console.log('---');
         console.log('OTP not found.');
     }
 })();
