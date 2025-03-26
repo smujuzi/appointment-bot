@@ -5,8 +5,19 @@ const { google } = require('googleapis');
 const SCOPES = ['https://www.googleapis.com/auth/gmail.modify'];
 const TOKEN_PATH = 'token.json';
 
+//Run getToken
+// getOTP();
+
+async function getOTP() {
+    const auth = await authorizeGmail();
+    const otp = await fetchLatestOTPGmail(auth);
+    console.log("The OTP: ", otp);
+    
+    return otp
+}
+
 async function authorizeGmail() {
-    const credentials = JSON.parse(fs.readFileSync('gmail-client-secret.json'));
+    const credentials = JSON.parse(fs.readFileSync('s-credentials.json'));
     const { client_secret, client_id, javascript_origins } = credentials.web;
     const oAuth2Client = new google.auth.OAuth2(client_id, client_secret, 'http://localhost');
 
@@ -71,19 +82,6 @@ async function fetchLatestOTPGmail(auth) {
     return otpMatch ? otpMatch[0] : null;
 }
 
-(async () => {
-    const auth = await authorizeGmail();
-    const otp = await fetchLatestOTPGmail(auth);
-    if (otp) {
-        console.log('OTP:', otp);
-        // Puppeteer logic to enter OTP
-    } else {
-        console.log('---');
-        console.log('---');
-        console.log('OTP not found.');
-    }
-})();
-
 async function markEmailAsRead(auth, messageId) {
     const gmail = google.gmail({ version: 'v1', auth });
     try {
@@ -101,4 +99,10 @@ async function markEmailAsRead(auth, messageId) {
     }
 }
 
+module.exports = {
+    authorizeGmail,
+    fetchLatestOTPGmail,
+    markEmailAsRead,
+    getOTP
+};
 

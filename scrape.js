@@ -2,6 +2,8 @@ const { connect } = require("puppeteer-real-browser")
 const axios = require("axios");
 require("dotenv").config();
 const fs = require('fs');
+const email = require('./email')
+const { getOTP} = require('./email');
 
 // Run the scraper
 scrapeAppointment();
@@ -33,6 +35,7 @@ async function scrapeAppointment() {
     // Navigate to the login page
     await page.goto(process.env.VFS_GLOBAL_URL, { waitUntil: "networkidle2" });
     await holdFor(10000)
+    // await holdFor(5000)
 
     console.log("Ready to type email")
     // Enter email and password
@@ -54,12 +57,6 @@ async function scrapeAppointment() {
       console.log("Keyboard unavailable.")
       console.log(error)
       return
-      // console.log("Typing password directly")
-      // await page.focus('#password1');
-      // console.log("Password = " + password);
-      // await page.type('#password1', password);
-      // console.log("Password done")
-
     }
 
     console.log("Ready to click button and log in");
@@ -72,18 +69,76 @@ async function scrapeAppointment() {
     console.log("Button clicked!");
     
     // await holdFor(10000)
-    const html = await page.content(); // Get the HTML content of the page
+    const otpHTML = await page.content(); // Get the HTML content of the page
 
     // Write HTML content to file
-    fs.writeFileSync('page.html', html, 'utf8');
-    console.log('HTML content written to page.html');
+    fs.writeFileSync('otp.html', otpHTML, 'utf8');
+    console.log('HTML content written to otp.html');
     //Ready for OTP
     console.log("Login successful");
+    // await holdFor(5000)
+    console.log("Lets get the code")
+    const otp = await getOTP();
+    if (otp) {
+        console.log('OTP:', otp);
+      } 
+    else {
+        console.log('---');
+        console.log('---');
+        console.log('OTP not found.');
+      }
+
+      // Enter OTP
+    await page.waitForSelector('input[formcontrolname="otp"]', { visible: true });
+    await page.click('input[formcontrolname="otp"]');
+
+    try {
+       // Wait for the keyboard to be visible
+      await page.waitForSelector('.touch-keyboard', { visible: true, timeout: 6000  });
+      await page.waitForSelector('.touch-keyboard-key', { visible: true});
+
+      await useNumericKeyboard(page, otp)
+
+    } catch (error) {
+      console.log("Keyboard unavailable.")
+      console.log(error)
+      console.log("Typing OTP directly")
+      // await page.waitForSelector("#password", { visible: true, timeout: 5000});
+      await page.focus('#mat-input-5');
+      console.log("OTP = " + otp);
+      await page.type('#mat-input-5', otp);
+      console.log("OTP done")
+    }
+
+    console.log("Ready to click button and view appointments");
+    console.log("Trying to click again")
+
+     // Click the login button
+     await Promise.all([
+      page.click('button.btn.btn-brand-orange'), // Click the button
+      page.waitForNavigation({ waitUntil: "networkidle2" }).catch(() => console.log("No navigation happened")), // Wait for navigation, but don't hang if it doesn't happen
+    ]);
+    console.log("Button clicked!");
+
+    const appointmentHTML = await page.content(); // Get the HTML content of the page
+
+    // Write HTML content to file
+    fs.writeFileSync('appointment.html', appointmentHTML, 'utf8');
+    console.log('HTML content written to appointment.html');
+
+
+    // ----------------------------------------------------------------------------
+    // ----------------------------------------------------------------------------
+    // ----------------------------------------------------------------------------
 
     // Navigate to appointment page (adjust selectors based on actual site structure)
-    await page.goto("https://visa.vfsglobal.com/gbr/en/nld/schedule-appointment", {
-      waitUntil: "networkidle2",
-    });
+    // await page.goto("https://visa.vfsglobal.com/gbr/en/nld/schedule-appointment", {
+    //   waitUntil: "networkidle2",
+    // });
+
+    // ----------------------------------------------------------------------------
+    // ----------------------------------------------------------------------------
+    // ----------------------------------------------------------------------------
 
     // Extract appointment details
     // const appointmentDetails = await page.evaluate(() => {
@@ -97,11 +152,30 @@ async function scrapeAppointment() {
     // Post to Telegram
     // await postToTelegram(appointmentDetails);
 
-    await browser.close();
+
+    // ----------------------------------------------------------------------------
+    // ----------------------------------------------------------------------------
+    // ----------------------------------------------------------------------------
+
+    // await browser.close();
+    // ----------------------------------------------------------------------------
+    // ----------------------------------------------------------------------------
+    // ----------------------------------------------------------------------------
   } catch (error) {
     console.error("Error during scraping:", error);
     await browser.close();
   }
+}
+
+async  function useNumericKeyboard(page, password) {
+
+
+  for (let char of password) {
+   
+      await pressKey(page, char);
+
+  }
+
 }
 
 async  function useKeyboard(page, password) {
