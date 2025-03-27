@@ -110,7 +110,7 @@ async function scrapeAppointment() {
       console.log("OTP done")
     }
 
-    console.log("Ready to click button and view appointments");
+    console.log("Ready to click button and start new booking");
     console.log("Trying to click again")
 
      // Click the login button
@@ -123,8 +123,18 @@ async function scrapeAppointment() {
     const appointmentHTML = await page.content(); // Get the HTML content of the page
 
     // Write HTML content to file
-    fs.writeFileSync('appointment.html', appointmentHTML, 'utf8');
-    console.log('HTML content written to appointment.html');
+    fs.writeFileSync('startNewBooking.html', appointmentHTML, 'utf8');
+    console.log('HTML content written to startNewBooking.html');
+
+    // console.log("Ready to click button and view appointments");
+    // console.log("Trying to click again")
+
+    //  // Click the login button
+    //  await Promise.all([
+    //   page.click('button.btn.btn-brand-orange'), // Click the button
+    //   page.waitForNavigation({ waitUntil: "networkidle2" }).catch(() => console.log("No navigation happened")), // Wait for navigation, but don't hang if it doesn't happen
+    // ]);
+    // console.log("Button clicked!");
 
 
     // ----------------------------------------------------------------------------
